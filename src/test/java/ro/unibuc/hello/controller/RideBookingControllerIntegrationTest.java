@@ -195,5 +195,18 @@ public class RideBookingControllerIntegrationTest {
             .andExpect(content().string("")); // Expecting an empty response body
     }
 
+    // Adăugare test pentru valori de frontieră
+    @Test
+    public void testCreateRideBooking_ShouldReturnBadRequest_WhenRideIdIsEmpty() throws Exception {
+        RideBookingRequestDTO rideBookingRequestDTO = new RideBookingRequestDTO();
+        rideBookingRequestDTO.setRideId("");
+        rideBookingRequestDTO.setPassengerId("validPassengerId");
+
+        mockMvc.perform(post("/bookings")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(rideBookingRequestDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$").value("Ride ID cannot be empty."));
+    }
 
 }

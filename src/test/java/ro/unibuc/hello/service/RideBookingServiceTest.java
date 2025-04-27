@@ -238,5 +238,19 @@ public class RideBookingServiceTest {
             verify(rideRepository).save(ride);
         }
         
+        // Adăugare teste pentru valori de frontieră
+        @Test
+        void testCreateRideBooking_EmptyPassengerId() {
+            RideBookingRequestDTO rideBookingRequestDTO = new RideBookingRequestDTO();
+            rideBookingRequestDTO.setRideId("r1");
+            rideBookingRequestDTO.setPassengerId("");
+
+            assertThrows(InvalidRideBookingException.class, () -> {
+                rideBookingService.createRideBooking(rideBookingRequestDTO);
+            });
+
+            verify(userRepository, never()).existsById("");
+            verify(rideRepository, never()).findById(anyString());
+        }
 
 }

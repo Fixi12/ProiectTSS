@@ -3,6 +3,7 @@ package ro.unibuc.hello.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -168,6 +169,33 @@ public class RideServiceTest {
         });
     }
 
+    @Test
+    void testCreateRide_DriverOverlapAsPassenger() {
+        RideRequestDTO request = createValidRideRequest();
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+        when(vehicleRepository.existsByLicensePlate(request.getCarLicensePlate())).thenReturn(true);
+        when(rideRepository.findByDriverIdAndTimeOverlap(any(), any(), any())).thenReturn(List.of());
+
+        RideBooking conflictingBooking = new RideBooking("ride123", request.getDriverId(), Instant.now());
+        when(rideBookingRepository.findByPassengerId(request.getDriverId())).thenReturn(List.of(conflictingBooking));
+        when(rideRepository.findByIdAndTimeOverlap(
+            conflictingBooking.getRideId(),
+            request.getDepartureTime(),
+            request.getArrivalTime()
+        )).thenReturn(List.of(new Ride()));
+
+        assertThrows(InvalidRideBookingException.class, () -> {
+            rideService.createRide(request);
+        });
+
+        verify(rideBookingRepository, times(1)).findByPassengerId(request.getDriverId());
+        verify(rideRepository, times(1)).findByIdAndTimeOverlap(
+            conflictingBooking.getRideId(),
+            request.getDepartureTime(),
+            request.getArrivalTime()
+        );
+    }
 
     @Test
     void testCreateRide_Success() {
@@ -378,6 +406,33 @@ public class RideServiceTest {
         verify(rideBookingRepository, never()).findByRideId(anyString());
         verify(rideBookingService, never()).updateRideBookingStatusToCancelled(anyString(), anyString());
         verify(rideRepository, never()).save(any());
+    }
+
+    // Adăugare teste pentru valori de frontieră
+    @Test
+    void testCreateRide_ZeroSeatsAvailable() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setSeatsAvailable(0);
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+
+        assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_MaxSeatsAvailable() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setSeatsAvailable(100); // Assuming 100 is the maximum allowed
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+        when(vehicleRepository.existsByLicensePlate(request.getCarLicensePlate())).thenReturn(true);
+        when(rideRepository.findByDriverIdAndTimeOverlap(any(), any(), any())).thenReturn(List.of());
+
+        assertDoesNotThrow(() -> {
+            rideService.createRide(request);
+        });
     }
 
 }

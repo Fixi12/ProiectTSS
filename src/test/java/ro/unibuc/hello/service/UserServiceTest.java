@@ -210,5 +210,16 @@ public class UserServiceTest {
 
    }
 
+   // Adăugare teste pentru valori de frontieră
+   @Test
+   void testCreateUser_EmptyEmail() {
+       UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "", "0787828282", "parolamea");
+
+       assertThrows(InvalidUserException.class, () -> {
+           userService.createUser(newUser);
+       });
+
+       verify(userRepository, never()).save(any());
+   }
 
 }

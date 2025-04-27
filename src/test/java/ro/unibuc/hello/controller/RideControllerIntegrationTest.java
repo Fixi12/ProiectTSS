@@ -286,4 +286,17 @@ public class RideControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].startLocation").value("Bucharest"));
     }
 
+    // Adăugare test pentru valori de frontieră
+    @Test
+    void createRide_ShouldReturnBadRequest_WhenSeatsAvailableExceedsLimit() throws Exception {
+        RideRequestDTO request = createValidRideRequest();
+        request.setSeatsAvailable(1000); // Assuming 1000 exceeds the logical limit
+
+        mockMvc.perform(post("/rides")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$").value("Number of seats exceeds the allowed limit."));
+    }
+
 }
