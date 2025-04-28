@@ -210,5 +210,60 @@ public class UserServiceTest {
 
    }
 
+   // Adăugare teste pentru valori de frontieră
+   @Test
+   void testCreateUser_EmptyEmail() {
+       UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "", "0787828282", "parolamea");
+
+       assertThrows(InvalidUserException.class, () -> {
+           userService.createUser(newUser);
+       });
+
+       verify(userRepository, never()).save(any());
+   }
+
+   @Test
+   void testCreateUser_InvalidEmail() {
+       UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "invalidemail", "0787828282", "parolamea");
+
+       assertThrows(InvalidUserException.class, () -> {
+           userService.createUser(newUser);
+       });
+
+       verify(userRepository, never()).save(any());
+   }
+
+   @Test
+   void testCreateUser_InvalidPhoneNumber() {
+       UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "andrei@gmail.com", "123", "parolamea");
+
+       assertThrows(InvalidUserException.class, () -> {
+           userService.createUser(newUser);
+       });
+
+       verify(userRepository, never()).save(any());
+   }
+
+   @Test
+   void testCreateUser_EmptyPassword() {
+       UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "andrei@gmail.com", "0787828282", "");
+
+       assertThrows(InvalidUserException.class, () -> {
+           userService.createUser(newUser);
+       });
+
+       verify(userRepository, never()).save(any());
+   }
+
+   @Test
+   void testCreateUser_ShortPassword() {
+       UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "andrei@gmail.com", "0787828282", "123");
+
+       assertThrows(InvalidUserException.class, () -> {
+           userService.createUser(newUser);
+       });
+
+       verify(userRepository, never()).save(any());
+   }
 
 }

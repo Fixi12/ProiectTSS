@@ -115,6 +115,11 @@ public class ReviewService {
             throw new InvalidReviewException("Reviewed is not driver of ride");
         }
 
+        // Adăugare verificare pentru rating care depășește limita maximă
+        if (reviewRequestDTO.getRating() > 5) { // Assuming 5 is the maximum allowed rating
+            throw new InvalidReviewException("Rating must be between 1 and 5.");
+        }
+
         Review newReview = reviewRequestDTO.toEntity();
         User reviewed = userRepository.findById(reviewRequestDTO.getReviewedId()).get();
         

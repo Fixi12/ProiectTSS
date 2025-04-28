@@ -3,6 +3,7 @@ package ro.unibuc.hello.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -168,6 +169,33 @@ public class RideServiceTest {
         });
     }
 
+    @Test
+    void testCreateRide_DriverOverlapAsPassenger() {
+        RideRequestDTO request = createValidRideRequest();
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+        when(vehicleRepository.existsByLicensePlate(request.getCarLicensePlate())).thenReturn(true);
+        when(rideRepository.findByDriverIdAndTimeOverlap(any(), any(), any())).thenReturn(List.of());
+
+        RideBooking conflictingBooking = new RideBooking("ride123", request.getDriverId(), Instant.now());
+        when(rideBookingRepository.findByPassengerId(request.getDriverId())).thenReturn(List.of(conflictingBooking));
+        when(rideRepository.findByIdAndTimeOverlap(
+            conflictingBooking.getRideId(),
+            request.getDepartureTime(),
+            request.getArrivalTime()
+        )).thenReturn(List.of(new Ride()));
+
+        assertThrows(InvalidRideBookingException.class, () -> {
+            rideService.createRide(request);
+        });
+
+        verify(rideBookingRepository, times(1)).findByPassengerId(request.getDriverId());
+        verify(rideRepository, times(1)).findByIdAndTimeOverlap(
+            conflictingBooking.getRideId(),
+            request.getDepartureTime(),
+            request.getArrivalTime()
+        );
+    }
 
     @Test
     void testCreateRide_Success() {
@@ -378,6 +406,150 @@ public class RideServiceTest {
         verify(rideBookingRepository, never()).findByRideId(anyString());
         verify(rideBookingService, never()).updateRideBookingStatusToCancelled(anyString(), anyString());
         verify(rideRepository, never()).save(any());
+    }
+
+    // Adăugare teste pentru valori de frontieră
+    @Test
+    void testCreateRide_ZeroSeatsAvailable() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setSeatsAvailable(0);
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+
+        assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_MaxSeatsAvailable() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setSeatsAvailable(100); // Assuming 100 is the maximum allowed
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+        when(vehicleRepository.existsByLicensePlate(request.getCarLicensePlate())).thenReturn(true);
+        when(rideRepository.findByDriverIdAndTimeOverlap(any(), any(), any())).thenReturn(List.of());
+
+        assertDoesNotThrow(() -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_NegativeSeatsAvailable() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setSeatsAvailable(-1);
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+
+        assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_ZeroPrice() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setSeatPrice(0);
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+        when(vehicleRepository.existsByLicensePlate(anyString())).thenReturn(true);
+        when(rideRepository.findByDriverIdAndTimeOverlap(anyString(), any(Instant.class), any(Instant.class))).thenReturn(List.of());
+        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertDoesNotThrow(() -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_ArrivalBeforeDeparture() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setArrivalTime(request.getDepartureTime().minusSeconds(3600)); // Arrival 1 hour before departure
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+
+        assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_EmptyStartLocation() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setStartLocation("");
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+
+        assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_NullEndLocation() {
+        RideRequestDTO request = createValidRideRequest();
+        request.setEndLocation(null);
+
+        when(userRepository.existsById(request.getDriverId())).thenReturn(true);
+
+        assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+    }
+
+    @Test
+    void testCreateRide_InvalidPassengerId_Null() {
+        // Arrange
+        RideRequestDTO request = createValidRideRequest();
+        request.setPassengerIds(Arrays.asList("validId1", null, "validId2"));
+
+        when(userRepository.existsById("validId1")).thenReturn(true);
+        when(userRepository.existsById("validId2")).thenReturn(true);
+
+        // Act & Assert
+        InvalidRideException exception = assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+
+        assertEquals("Passenger ID cannot be null or empty.", exception.getMessage());
+    }
+
+    @Test
+    void testCreateRide_InvalidPassengerId_NotExists() {
+        // Arrange
+        RideRequestDTO request = createValidRideRequest();
+        request.setPassengerIds(Arrays.asList("validId1", "invalidId", "validId2"));
+
+        when(userRepository.existsById("validId1")).thenReturn(true);
+        when(userRepository.existsById("validId2")).thenReturn(true);
+        when(userRepository.existsById("invalidId")).thenReturn(false);
+
+        // Act & Assert
+        InvalidRideException exception = assertThrows(InvalidRideException.class, () -> {
+            rideService.createRide(request);
+        });
+
+        assertEquals("Passenger with ID invalidId does not exist.", exception.getMessage());
+    }
+
+    @Test
+    void testCreateRide_ValidPassengerIds() {
+        // Arrange
+        RideRequestDTO request = createValidRideRequest();
+        request.setPassengerIds(Arrays.asList("validId1", "validId2"));
+
+        when(userRepository.existsById("validId1")).thenReturn(true);
+        when(userRepository.existsById("validId2")).thenReturn(true);
+        when(vehicleRepository.existsByLicensePlate(anyString())).thenReturn(true);
+        when(rideRepository.findByDriverIdAndTimeOverlap(anyString(), any(Instant.class), any(Instant.class))).thenReturn(List.of());
+        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        RideResponseDTO response = assertDoesNotThrow(() -> rideService.createRide(request));
+
+        // Assert
+        assertNotNull(response);
     }
 
 }

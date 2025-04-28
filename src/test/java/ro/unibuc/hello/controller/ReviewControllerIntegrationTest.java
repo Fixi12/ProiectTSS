@@ -154,4 +154,21 @@ public class ReviewControllerIntegrationTest {
         Assertions.assertEquals(1, reviews.size());
         Assertions.assertEquals("Great ride!", reviews.get(0).getComment());
     }
+
+    // Adăugare test pentru valori de frontieră
+    @Test
+    public void testCreateReview_ShouldReturnBadRequest_WhenRatingExceedsMaximum() throws Exception {
+        ReviewRequestDTO invalidReviewRequest = new ReviewRequestDTO();
+        invalidReviewRequest.setReviewerId("user3");
+        invalidReviewRequest.setReviewedId("driver2");
+        invalidReviewRequest.setRideId("ride3");
+        invalidReviewRequest.setRating(10); // Assuming 10 exceeds the maximum allowed rating
+        invalidReviewRequest.setComment("Great ride!");
+
+        mockMvc.perform(post("/reviews")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(invalidReviewRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$").value("Rating must be between 1 and 5."));
+    }
 }

@@ -71,6 +71,11 @@ public class RideBookingService {
     @Transactional
     public RideBookingResponseDTO createRideBooking (RideBookingRequestDTO rideBookingRequestDTO)
     {
+        // Adăugare verificare pentru Ride ID gol
+        if (rideBookingRequestDTO.getRideId() == null || rideBookingRequestDTO.getRideId().isEmpty()) {
+            throw new InvalidRideBookingException("Ride ID cannot be empty.");
+        }
+
         //check if passenger id is in users collection
         if(!userRepository.existsById(rideBookingRequestDTO.getPassengerId())){
             throw new InvalidRideBookingException("Passenger's id doesnt exist");

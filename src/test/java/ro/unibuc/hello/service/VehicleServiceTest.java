@@ -223,4 +223,20 @@ public class VehicleServiceTest {
         verify(vehicleRepository, never()).delete(any());
     }
 
+    // Adăugare teste pentru valori de frontieră
+    @Test
+    void testAddVehicle_EmptyLicensePlate() {
+        VehicleDTO vehicleDTO = new VehicleDTO("userId1", "Dacia", "Logan", "");
+        when(vehicleRepository.existsByLicensePlate("")).thenReturn(false);
+        when(userRepository.findById("userId1")).thenReturn(Optional.of(new User()));
+
+        assertThrows(VehicleConflictException.class, () -> {
+            vehicleService.addVehicle(vehicleDTO);
+        });
+
+        verify(vehicleRepository, times(1)).existsByLicensePlate("");
+        verify(userRepository, times(1)).findById("userId1");
+        verify(vehicleRepository, never()).save(any());
+    }
+
 }
