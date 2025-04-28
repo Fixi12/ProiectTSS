@@ -69,7 +69,7 @@ public class RideService {
         }
 
         // Adăugare verificare pentru numărul maxim de locuri disponibile
-        if (rideRequestDTO.getSeatsAvailable() > 5) { // Assuming 5 is the logical limit
+        if (rideRequestDTO.getSeatsAvailable() > 5) {
             throw new InvalidRideException("Number of seats exceeds the allowed limit.");
         }
 

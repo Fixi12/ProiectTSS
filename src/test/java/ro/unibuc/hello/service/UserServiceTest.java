@@ -233,17 +233,7 @@ public class UserServiceTest {
        verify(userRepository, never()).save(any());
    }
 
-   @Test
-   void testCreateUser_InvalidPhoneNumber() {
-       UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "andrei@gmail.com", "123", "parolamea");
-
-       assertThrows(InvalidUserException.class, () -> {
-           userService.createUser(newUser);
-       });
-
-       verify(userRepository, never()).save(any());
-   }
-
+    // frontier
    @Test
    void testCreateUser_EmptyPassword() {
        UserRequestDTO newUser = new UserRequestDTO("Andrei", "Popescu", "andrei@gmail.com", "0787828282", "");

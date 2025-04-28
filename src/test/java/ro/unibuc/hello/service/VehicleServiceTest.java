@@ -223,20 +223,22 @@ public class VehicleServiceTest {
         verify(vehicleRepository, never()).delete(any());
     }
 
-    // Adăugare teste pentru valori de frontieră
-    @Test
-    void testAddVehicle_EmptyLicensePlate() {
-        VehicleDTO vehicleDTO = new VehicleDTO("userId1", "Dacia", "Logan", "");
-        when(vehicleRepository.existsByLicensePlate("")).thenReturn(false);
-        when(userRepository.findById("userId1")).thenReturn(Optional.of(new User()));
-
-        assertThrows(VehicleConflictException.class, () -> {
-            vehicleService.addVehicle(vehicleDTO);
-        });
-
-        verify(vehicleRepository, times(1)).existsByLicensePlate("");
-        verify(userRepository, times(1)).findById("userId1");
-        verify(vehicleRepository, never()).save(any());
-    }
-
+    // Adaugare teste pentru valori de frontieră
+   @Test
+void testAddVehicle_EmptyLicensePlate() {
+    VehicleDTO vehicleDTO = new VehicleDTO("userId1", "Dacia", "Logan", "");
+    
+    // We expect a VehicleConflictException
+    VehicleConflictException exception = assertThrows(VehicleConflictException.class, () -> {
+        vehicleService.addVehicle(vehicleDTO);
+    });
+    
+    // Verify the exception message
+    assertEquals("License plate cannot be empty.", exception.getMessage());
+    
+    // Since we throw early, verify that no repository methods were called
+    verify(vehicleRepository, never()).existsByLicensePlate(anyString());
+    verify(userRepository, never()).findById(anyString());
+    verify(vehicleRepository, never()).save(any());
+}
 }

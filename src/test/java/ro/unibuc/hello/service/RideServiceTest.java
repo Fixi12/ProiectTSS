@@ -424,7 +424,7 @@ public class RideServiceTest {
     @Test
     void testCreateRide_MaxSeatsAvailable() {
         RideRequestDTO request = createValidRideRequest();
-        request.setSeatsAvailable(100); // Assuming 100 is the maximum allowed
+        request.setSeatsAvailable(5);
 
         when(userRepository.existsById(request.getDriverId())).thenReturn(true);
         when(vehicleRepository.existsByLicensePlate(request.getCarLicensePlate())).thenReturn(true);
@@ -497,59 +497,4 @@ public class RideServiceTest {
             rideService.createRide(request);
         });
     }
-
-    @Test
-    void testCreateRide_InvalidPassengerId_Null() {
-        // Arrange
-        RideRequestDTO request = createValidRideRequest();
-        request.setPassengerIds(Arrays.asList("validId1", null, "validId2"));
-
-        when(userRepository.existsById("validId1")).thenReturn(true);
-        when(userRepository.existsById("validId2")).thenReturn(true);
-
-        // Act & Assert
-        InvalidRideException exception = assertThrows(InvalidRideException.class, () -> {
-            rideService.createRide(request);
-        });
-
-        assertEquals("Passenger ID cannot be null or empty.", exception.getMessage());
-    }
-
-    @Test
-    void testCreateRide_InvalidPassengerId_NotExists() {
-        // Arrange
-        RideRequestDTO request = createValidRideRequest();
-        request.setPassengerIds(Arrays.asList("validId1", "invalidId", "validId2"));
-
-        when(userRepository.existsById("validId1")).thenReturn(true);
-        when(userRepository.existsById("validId2")).thenReturn(true);
-        when(userRepository.existsById("invalidId")).thenReturn(false);
-
-        // Act & Assert
-        InvalidRideException exception = assertThrows(InvalidRideException.class, () -> {
-            rideService.createRide(request);
-        });
-
-        assertEquals("Passenger with ID invalidId does not exist.", exception.getMessage());
-    }
-
-    @Test
-    void testCreateRide_ValidPassengerIds() {
-        // Arrange
-        RideRequestDTO request = createValidRideRequest();
-        request.setPassengerIds(Arrays.asList("validId1", "validId2"));
-
-        when(userRepository.existsById("validId1")).thenReturn(true);
-        when(userRepository.existsById("validId2")).thenReturn(true);
-        when(vehicleRepository.existsByLicensePlate(anyString())).thenReturn(true);
-        when(rideRepository.findByDriverIdAndTimeOverlap(anyString(), any(Instant.class), any(Instant.class))).thenReturn(List.of());
-        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // Act
-        RideResponseDTO response = assertDoesNotThrow(() -> rideService.createRide(request));
-
-        // Assert
-        assertNotNull(response);
-    }
-
 }

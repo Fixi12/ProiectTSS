@@ -13,6 +13,7 @@ import ro.unibuc.hello.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
@@ -33,21 +34,32 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public UserResponseDTO createUser(UserRequestDTO userDto) {
+   public UserResponseDTO createUser(UserRequestDTO userDto) {
+        // Validate required fields
+        if (userDto.getPassword() == null || userDto.getPassword().isEmpty() || userDto.getPassword().length() < 5) {
+            throw new InvalidUserException("Password cannot be empty.");
+        }
+
+        if (userDto.getMail() == null || userDto.getMail().isEmpty() || !isValidEmail(userDto.getMail())) {
+            throw new InvalidUserException("Mail cannot be empty.");
+        }
+        
         if (userRepository.findByMail(userDto.getMail()).isPresent()) {
             throw new DuplicateKeyException("Email already exists: " + userDto.getMail());
         } else if (userRepository.findByPhoneNumber(userDto.getPhoneNumber()).isPresent()) {
-            throw new DuplicateKeyException("Phone number " +
-                                            userDto.getPhoneNumber() + 
-                                            " already used");
+            throw new DuplicateKeyException("Phone number " + userDto.getPhoneNumber() + " already used");
         }
-
+        
         User newUser = userDto.toEntity();
-
         String passwordHash = passwordEncoder.encode(userDto.getPassword());
         newUser.setPasswordHash(passwordHash);
-
         return userRepository.save(newUser).toDTO();
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        Pattern pattern = Pattern.compile(emailRegex);
+        return pattern.matcher(email).matches();
     }
 
 

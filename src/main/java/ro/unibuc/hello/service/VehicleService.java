@@ -28,6 +28,10 @@ public class VehicleService {
     }
     
     public VehicleDTO addVehicle(VehicleDTO vehicleDTO) {
+        if (vehicleDTO.getLicensePlate() == null || vehicleDTO.getLicensePlate().isEmpty()) {
+            throw new VehicleConflictException("License plate cannot be empty.");
+        }
+
         if (vehicleRepository.existsByLicensePlate(vehicleDTO.getLicensePlate())) {
             throw new VehicleConflictException("License plate already used.");
         }

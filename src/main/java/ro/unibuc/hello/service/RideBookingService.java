@@ -76,16 +76,17 @@ public class RideBookingService {
             throw new InvalidRideBookingException("Ride ID cannot be empty.");
         }
 
-        //check if passenger id is in users collection
+        // Check if passenger ID is empty
+        if (rideBookingRequestDTO.getPassengerId() == null || rideBookingRequestDTO.getPassengerId().isEmpty()) {
+            throw new InvalidRideBookingException("Passenger ID cannot be empty.");
+        }
+
         if(!userRepository.existsById(rideBookingRequestDTO.getPassengerId())){
             throw new InvalidRideBookingException("Passenger's id doesnt exist");
         }
-
-        //ride id has to exist
         Ride ride = rideRepository.findById(rideBookingRequestDTO.getRideId())
             .orElseThrow(() -> new InvalidRideException("Ride ID does not exist."));
 
-        //passenger shouldnt have already booked
         RideBooking existingBooking = rideBookingRepository.findByRideIdAndPassengerId(
             ride.getId(), rideBookingRequestDTO.getPassengerId()
             ).orElse(null);

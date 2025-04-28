@@ -60,8 +60,7 @@ dependencies {
 	testImplementation "io.cucumber:cucumber-java:$cucumberVersion"
 	testImplementation "io.cucumber:cucumber-junit:$cucumberVersion"
 	testImplementation "io.cucumber:cucumber-spring:$cucumberVersion"
-	testImplementation 'org.pitest:pitest-junit5-plugin:1.15.0'
-    testImplementation 'com.arcmutate:arcmutate-spring-plugin:1.0.0'
+	testImplementation 'org.pitest:pitest-junit5-plugin:1.2.0'
 }
 
 dependencyManagement {

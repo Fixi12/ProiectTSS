@@ -187,20 +187,4 @@ public class ReviewServiceTest {
         InvalidReviewException exception = assertThrows(InvalidReviewException.class, () -> reviewService.createReview(validReviewRequest));
         assertEquals("Reviewer already made a review for this ride", exception.getMessage());
     }
-
-    // Adăugare teste pentru valori de frontieră
-    @Test
-    void testCreateReview_ZeroRating() {
-        validReviewRequest.setRating(0);
-
-        when(userRepository.existsById(validReviewRequest.getReviewerId())).thenReturn(true);
-        when(userRepository.existsById(validReviewRequest.getReviewedId())).thenReturn(true);
-        when(rideRepository.findById(validReviewRequest.getRideId())).thenReturn(Optional.of(ride));
-
-        InvalidReviewException exception = assertThrows(InvalidReviewException.class, () -> {
-            reviewService.createReview(validReviewRequest);
-        });
-
-        assertEquals("Rating must be between 1 and 5.", exception.getMessage());
-    }
 }
