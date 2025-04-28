@@ -4,6 +4,7 @@ plugins {
 	id 'org.asciidoctor.jvm.convert' version '2.4.0'
 	id 'java'
 	id 'jacoco'
+	id 'info.solidsoft.pitest' version '1.15.0'
 }
 
 group = 'ro.unibuc'
@@ -59,6 +60,7 @@ dependencies {
 	testImplementation "io.cucumber:cucumber-java:$cucumberVersion"
 	testImplementation "io.cucumber:cucumber-junit:$cucumberVersion"
 	testImplementation "io.cucumber:cucumber-spring:$cucumberVersion"
+	testImplementation 'org.pitest:pitest-junit5-plugin:1.2.0'
 }
 
 dependencyManagement {
@@ -111,4 +113,12 @@ task testE2E() {
 asciidoctor {
 	inputs.dir snippetsDir
 	dependsOn test
+}
+
+pitest {
+    targetClasses = ['ro.unibuc.hello.*'] // Include toate clasele din pachetul specificat
+    targetTests = ['ro.unibuc.hello.*'] // Include toate testele din pachetul specificat
+    threads = 4 // Numărul de fire pentru execuție paralelă
+    outputFormats = ['HTML', 'XML'] // Formatele raportului generat
+    timestampedReports = false // Dezactivează rapoartele cu timestamp
 }

@@ -68,6 +68,11 @@ public class RideService {
             throw new InvalidRideException("Number of seats has to be greater than 0.");
         }
 
+        // Adăugare verificare pentru numărul maxim de locuri disponibile
+        if (rideRequestDTO.getSeatsAvailable() > 5) {
+            throw new InvalidRideException("Number of seats exceeds the allowed limit.");
+        }
+
         // Check if the price is >= 0
         if (rideRequestDTO.getSeatPrice() < 0) {
             throw new InvalidRideException("Price has to be greater or equal to 0.");

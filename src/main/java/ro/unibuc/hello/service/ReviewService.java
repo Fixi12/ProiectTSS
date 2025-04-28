@@ -74,6 +74,10 @@ public class ReviewService {
             throw new InvalidReviewException("Reviewer can't also be reviewed.");
         }
 
+        if (reviewRequestDTO.getRating() < 1 || reviewRequestDTO.getRating() > 5) {
+            throw new InvalidReviewException("Rating must be between 1 and 5.");
+        }
+
         Optional<Ride> rideOptional = rideRepository.findById(reviewRequestDTO.getRideId());
         // Check if ride exists in rides table
         if (rideOptional.isEmpty()) {
