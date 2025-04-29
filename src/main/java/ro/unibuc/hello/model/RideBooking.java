@@ -18,7 +18,6 @@ import ro.unibuc.hello.enums.RideBookingStatus;
 @Document("ride_passengers")
 @Getter
 @Setter
-@NoArgsConstructor
 public class RideBooking {
     @Id
     private String id;
@@ -27,6 +26,8 @@ public class RideBooking {
     private RideBookingStatus bookingStatus;
     private Instant createdAt;
 
+    public RideBooking() {
+    }
 
     public RideBooking(String rideId, String passengerId, Instant createdAt)
     {

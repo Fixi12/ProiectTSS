@@ -116,9 +116,10 @@ asciidoctor {
 }
 
 pitest {
-    targetClasses = ['ro.unibuc.hello.*'] // Include toate clasele din pachetul specificat
-    targetTests = ['ro.unibuc.hello.*'] // Include toate testele din pachetul specificat
+    targetClasses = ['ro.unibuc.hello.service.*'] // Include toate clasele din pachetul specificat
+    targetTests = ['ro.unibuc.hello.service.*'] // Include toate testele din pachetul specificat
     threads = 4 // Numărul de fire pentru execuție paralelă
     outputFormats = ['HTML', 'XML'] // Formatele raportului generat
     timestampedReports = false // Dezactivează rapoartele cu timestamp
+	verbose = true
 }
