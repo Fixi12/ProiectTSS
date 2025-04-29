@@ -497,4 +497,23 @@ public class RideServiceTest {
             rideService.createRide(request);
         });
     }
+
+    @Test
+    void testUpdateRideStatusToInProgressReturnsCorrectDTO() {
+        // Arrange
+        String rideId = "ride123";
+        Ride ride = new Ride();
+        ride.setId(rideId);
+        ride.setStatus(RideStatus.SCHEDULED);
+        ride.setDepartureTime(Instant.now().minusSeconds(60)); // Past departure time
+    
+        when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
+        when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    
+        // Act
+        RideResponseDTO result = rideService.updateRideStatusToInProgress(rideId);
+    
+        // Assert
+        assertNotNull(result, "Returned RideResponseDTO should not be null");
+    }
 }

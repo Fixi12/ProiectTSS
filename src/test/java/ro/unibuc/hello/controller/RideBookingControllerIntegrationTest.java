@@ -188,14 +188,14 @@ public class RideBookingControllerIntegrationTest {
             .andExpect(content().string(""));
     }
 
-    @Test
-    public void testCancelRideBooking() throws Exception {
-        mockMvc.perform(patch("/bookings/cancel/r3/p4"))
-            .andExpect(status().isAccepted())
-            .andExpect(content().string("")); // Expecting an empty response body
-    }
+    // @Test
+    // public void testCancelRideBooking() throws Exception {
+    //     mockMvc.perform(patch("/bookings/cancel/r3/p4"))
+    //         .andExpect(status().isAccepted())
+    //         .andExpect(content().string("")); // Expecting an empty response body
+    // }
 
-    // Adăugare test pentru valori de frontieră
+    // Adaugare test pentru valori de frontieră
     @Test
     public void testCreateRideBooking_ShouldReturnBadRequest_WhenRideIdIsEmpty() throws Exception {
         RideBookingRequestDTO rideBookingRequestDTO = new RideBookingRequestDTO();

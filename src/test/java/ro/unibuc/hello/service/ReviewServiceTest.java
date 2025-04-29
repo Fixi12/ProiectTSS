@@ -1,8 +1,8 @@
 package ro.unibuc.hello.service;
 
 import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,10 +55,18 @@ public class ReviewServiceTest {
     private ReviewService reviewService;
     
     private ReviewRequestDTO validReviewRequest;
+    private ReviewRequestDTO validReviewRequest2;
+    private ReviewRequestDTO validReviewRequest3;
+
     private Ride ride;
     private User reviewer;
+    private User reviewer2;
+    private User reviewer3;
+
     private User reviewed;
     private RideBooking rideBooking;
+    private RideBooking rideBooking2;
+    private RideBooking rideBooking3;
     
     @BeforeEach
     void setUp() {
@@ -69,17 +77,42 @@ public class ReviewServiceTest {
         validReviewRequest.setRating(5);
         validReviewRequest.setComment("Great ride!");
 
+        validReviewRequest2 = new ReviewRequestDTO();
+        validReviewRequest2.setReviewerId("reviewer2");
+        validReviewRequest2.setReviewedId("driver1");
+        validReviewRequest2.setRideId("ride1");
+        validReviewRequest2.setRating(3);
+        validReviewRequest2.setComment("Great ride!");
+
+        validReviewRequest3 = new ReviewRequestDTO();
+        validReviewRequest3.setReviewerId("reviewer3");
+        validReviewRequest3.setReviewedId("driver1");
+        validReviewRequest3.setRideId("ride1");
+        validReviewRequest3.setRating(0);
+        validReviewRequest3.setComment("Great ride!");
+
         ride = new Ride("driver1", "startLocation", "endLocation", Instant.now(), Instant.now().plusSeconds(3600), 20, 3, "XYZ123");
         ride.setStatus(RideStatus.COMPLETED);
 
         reviewer = new User("John", "Doe", "john@mail.com", "1234567890", Collections.singletonList(Role.PASSENGER));
         reviewer.setId("reviewer1");
 
+        reviewer2 = new User("John", "Doe", "danutz@mail.com", "1234467890", Collections.singletonList(Role.PASSENGER));
+        reviewer2.setId("reviewer2");
+
+        reviewer3 = new User("John", "Doe", "georgi@gmail.com", "8234467890", Collections.singletonList(Role.PASSENGER));
+        reviewer3.setId("reviewer3");
+
         reviewed = new User("Driver", "One", "driver@mail.com", "0987654321", Collections.singletonList(Role.DRIVER));
         reviewed.setId("driver1");
 
         rideBooking = new RideBooking("ride1", "reviewer1", Instant.now());
+        rideBooking2 = new RideBooking("ride1", "reviewer2", Instant.now());
+        rideBooking3 = new RideBooking("ride1", "reviewer3", Instant.now());
+
         rideBooking.setRideBookingStatus(RideBookingStatus.BOOKED);
+        rideBooking2.setRideBookingStatus(RideBookingStatus.BOOKED);
+        rideBooking3.setRideBookingStatus(RideBookingStatus.BOOKED);
     }
 
     @Test
@@ -187,4 +220,52 @@ public class ReviewServiceTest {
         InvalidReviewException exception = assertThrows(InvalidReviewException.class, () -> reviewService.createReview(validReviewRequest));
         assertEquals("Reviewer already made a review for this ride", exception.getMessage());
     }
+
+
+    @Test
+    void testAvgRatingIsCorrectAfterValidReview() {
+        when(userRepository.existsById(validReviewRequest.getReviewerId())).thenReturn(true);
+        when(userRepository.existsById(validReviewRequest.getReviewedId())).thenReturn(true);
+        when(rideRepository.findById(validReviewRequest.getRideId())).thenReturn(Optional.of(ride));
+        when(rideBookingRepository.findByRideIdAndPassengerId(validReviewRequest.getRideId(), validReviewRequest.getReviewerId()))
+                .thenReturn(Optional.of(rideBooking));
+        when(reviewRepository.findByRideIdAndReviewerId(validReviewRequest.getRideId(), validReviewRequest.getReviewerId()))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById(validReviewRequest.getReviewedId())).thenReturn(Optional.of(reviewed));
+
+        when(userRepository.existsById(validReviewRequest2.getReviewerId())).thenReturn(true);
+        when(userRepository.existsById(validReviewRequest2.getReviewedId())).thenReturn(true);
+        when(rideRepository.findById(validReviewRequest2.getRideId())).thenReturn(Optional.of(ride));
+        when(rideBookingRepository.findByRideIdAndPassengerId(validReviewRequest2.getRideId(), validReviewRequest2.getReviewerId()))
+                .thenReturn(Optional.of(rideBooking));
+        when(reviewRepository.findByRideIdAndReviewerId(validReviewRequest2.getRideId(), validReviewRequest2.getReviewerId()))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById(validReviewRequest2.getReviewedId())).thenReturn(Optional.of(reviewed));
+
+
+        // Act: creează review-ul valid
+        reviewService.createReview(validReviewRequest);
+        reviewService.createReview(validReviewRequest2);
+
+        User updatedDriver = userRepository.findById(reviewed.getId()).orElseThrow();
+        assertEquals(4.0, updatedDriver.getAvgRating());
+        assertEquals(8, updatedDriver.getRatingsSum());
+        assertEquals(2, updatedDriver.getReviewsNumber());
+    }
+
+    @Test
+    void testLessThan1Review() {
+    validReviewRequest3.setRating(0);
+
+    // Only required stubbing (for steps before the rating check)
+    lenient().when(userRepository.existsById(validReviewRequest3.getReviewerId())).thenReturn(true);
+    lenient().when(userRepository.existsById(validReviewRequest3.getReviewedId())).thenReturn(true);
+
+    InvalidReviewException exception = assertThrows(InvalidReviewException.class, () -> {
+        reviewService.createReview(validReviewRequest3);
+    });
+
+    assertEquals("Rating must be between 1 and 5.", exception.getMessage());
+}
+
 }
